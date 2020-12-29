@@ -50,3 +50,9 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# CMake middle files
+build/*
+
+# ccls
+.ccls-cache
