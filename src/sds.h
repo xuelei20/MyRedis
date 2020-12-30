@@ -12,18 +12,20 @@ struct sdshdr {
   char buf[];
 };
 
-// T = O(1)
+// T = O(1). If use C string, strlen T = O(n)
 inline static size_t sdslen(const sds s) {
   struct sdshdr *sh = (void*)(s - sizeof(struct sdshdr));
   return sh->len;
 }
 
 // T = O(1)
-inline static size_t sdsavil(const sds s) {
+inline static size_t sdsavail(const sds s) {
   struct sdshdr *sh = (void*)(s - sizeof(struct sdshdr));
   return sh->free;
 }
 
-sds sdsnew(const char* init);
+sds sdsnew(const char *init);
+sds sdsnewlen(const void *init, size_t len);
+void sdsfree(sds s);
 
 #endif // _XL_
