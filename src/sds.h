@@ -4,6 +4,8 @@
 
 #include <sys/types.h>
 
+#define SDS_MAX_PREALLOC (1024*1024)
+
 typedef char *sds; // point to buf
 
 struct sdshdr {
@@ -27,5 +29,13 @@ inline static size_t sdsavail(const sds s) {
 sds sdsnew(const char *init);
 sds sdsnewlen(const void *init, size_t len);
 void sdsfree(sds s);
+sds sdsdup(const sds s);
+void sdsclear(sds s);
+sds sdscat(sds s, const char *append);
+sds sdscatlen(sds s, const char *append, size_t addlen);
+sds sdscatsds(sds s, const sds append);
+
+/* low level function */
+sds sdsMakeRoomFor(sds ptr, size_t addlen);
 
 #endif // _XL_

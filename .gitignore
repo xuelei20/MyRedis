@@ -53,6 +53,7 @@ dkms.conf
 
 # CMake middle files
 build/*
+compile_commands.json
 
 # ccls
 .ccls-cache
