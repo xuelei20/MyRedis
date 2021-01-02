@@ -37,6 +37,19 @@ int main(int argc, char *argv[]) {
   assert(sdslen(sname) == 20);
   assert(sdsavail(sname) == 2);
 
+  sdscpy(sdup, "copytest");
+  printf("%s\n", sdup);
+  assert(sdslen(sdup) == 8);
+  assert(sdsavail(sdup) == 1);
+
+  sdscpy(sdup, "cxxtest add");
+  printf("%s\n", sdup);
+  assert(sdslen(sdup) == 11);
+  assert(sdsavail(sdup) == 11);
+
+  sds s2 = sdsnew("cxxtest");
+  assert(sdscmp(sdup, s2) == 4);
+
   sdsfree(sdup); // when free, can't be used anymore
   sdsfree(sname); // when free, can't be used anymore
 
