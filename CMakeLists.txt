@@ -1,11 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
+project(xlRedis)
 
-project(MyRedis)
-
-set(C_FLAGS
-  -g
-  -std=c99
-  -Wall)
+add_compile_options(-g -Wall -std=c99)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_subdirectory(src)

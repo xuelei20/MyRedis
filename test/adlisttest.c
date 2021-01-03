@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <assert.h>
+#include <string.h>
 
 void printListSds(list *lst)
 {
@@ -40,9 +41,7 @@ void *freeSdsFunc(void *ptr)
 
 void *matchSdsFunc(void *ptr, void *key)
 {
-  sds sptr = ptr;
-  sds skey = key;
-  if (sdscmp(sptr, skey) == 0) {
+  if (strcmp(ptr, key) == 0) {
     return (void *)1;
   } else {
     return (void *)0;
@@ -51,11 +50,10 @@ void *matchSdsFunc(void *ptr, void *key)
 
 int main()
 {
-  listNode nTest;
   printf("sizeof:%ld\n", sizeof(listNode));
   printf("sizeof:%ld\n", sizeof(list));
-  list lTest;
-  printf("init, head:%p, len:%ld, match:%p\n", lTest.head, lTest.len, lTest.match);
+  // list lTest;
+  // printf("init, head:%p, len:%ld, match:%p\n", lTest.head, lTest.len, lTest.match);
 
   list *lName = listCreate();
   listAddNodeHead(lName, sdsnew("li3"));
@@ -86,7 +84,7 @@ int main()
   printListSds_r(lName);
 
   listSetMatchMethod(lName, matchSdsFunc);
-  listNode *zhaoNode = listSearchKey(lName, sdsnew("zhao4"));
+  listNode *zhaoNode = listSearchKey(lName, "zhao4");
   assert(zhaoNode != NULL);
   listNode *prevNode = listNodePrev(zhaoNode);
   printf("prev:%s\n", (sds)listNodeValue(prevNode));
