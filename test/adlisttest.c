@@ -6,18 +6,56 @@
 
 void printListSds(list *lst)
 {
-  for (listNode *n=listFirst(lst); n!=NULL; n=listNextNode(n))
-  {
-    printf("%s,", (const char*)listNodeValue(n));
+  listIter *it = listGetIterator(lst, AL_START_HEAD);
+  listNode *node;
+  while ((node = listNext(it)) != NULL) {
+    printf("%s,", (const char*)listNodeValue(node));
   }
+  listReleaseIterator(it);
   printf("\n");
+}
+
+void printListSds_r(list *lst)
+{
+  listIter *it = listGetIterator(lst, AL_START_TAIL);
+  listNode *node;
+  while ((node = listNext(it)) != NULL) {
+    printf("%s,", (const char *)listNodeValue(node));
+  }
+  listReleaseIterator(it);
+  printf("\n");
+}
+
+void *dupSdsFunc(void *ptr)
+{
+  return sdsdup((sds)ptr);
+}
+
+void *freeSdsFunc(void *ptr)
+{
+  printf("free sds:%s\n", (sds)ptr);
+  sdsfree((sds)ptr);
+  return NULL;
+}
+
+void *matchSdsFunc(void *ptr, void *key)
+{
+  sds sptr = ptr;
+  sds skey = key;
+  if (sdscmp(sptr, skey) == 0) {
+    return (void *)1;
+  } else {
+    return (void *)0;
+  }
 }
 
 int main()
 {
-  listNode node;
+  listNode nTest;
   printf("sizeof:%ld\n", sizeof(listNode));
   printf("sizeof:%ld\n", sizeof(list));
+  list lTest;
+  printf("init, head:%p, len:%ld, match:%p\n", lTest.head, lTest.len, lTest.match);
 
   list *lName = listCreate();
   listAddNodeHead(lName, sdsnew("li3"));
@@ -45,5 +83,35 @@ int main()
   listInsertNode(lName, listLast(lName), sdsnew("before4.5"), 0);
   assert(listLength(lName) == 8);
   printListSds(lName);
+  printListSds_r(lName);
+
+  listSetMatchMethod(lName, matchSdsFunc);
+  listNode *zhaoNode = listSearchKey(lName, sdsnew("zhao4"));
+  assert(zhaoNode != NULL);
+  listNode *prevNode = listNodePrev(zhaoNode);
+  printf("prev:%s\n", (sds)listNodeValue(prevNode));
+
+  listNode *node = listIndex(lName, 2);
+  printf("node2:%s\n", (const char *)listNodeValue(node));
+  node = listIndex(lName, -1);
+  printf("node-1:%s\n", (const char *)listNodeValue(node));
+
+  listSetFreeMethod(lName, freeSdsFunc);
+  listDelNode(lName, zhaoNode);
+  assert(listLength(lName) == 7);
+  printListSds(lName);
+  printListSds_r(lName);
+
+  printf("----listDup----\n");
+  listSetDupMethod(lName, dupSdsFunc);
+  list *lDup = listDup(lName);
+  assert(listLength(lDup) == 7);
+  printListSds(lDup);
+  printListSds_r(lDup);
+
+  listRelease(lName);
+  listRelease(lDup);
+
+  return 0;
 }
 

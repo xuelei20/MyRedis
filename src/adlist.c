@@ -15,6 +15,7 @@ list *listCreate()
   lst->dup = NULL;
   lst->free = NULL;
   lst->match = NULL;
+
   return lst;
 }
 
@@ -37,6 +38,7 @@ list *listAddNodeHead(list *lst, void *value)
     lst->head = node;
   }
   lst->len++;
+
   return lst;
 }
 
@@ -59,9 +61,11 @@ list *listAddNodeTail(list *lst, void *value)
     lst->tail = node;
   }
   lst->len++;
+
   return lst;
 }
 
+// T = O(1)
 list *listInsertNode(list *lst, listNode *oldNode, void *value, int after)
 {
   assert(lst != NULL);
@@ -92,5 +96,180 @@ list *listInsertNode(list *lst, listNode *oldNode, void *value, int after)
     oldNode->prev = node;
   }
   lst->len++;
+
   return lst;
+}
+
+listIter *listGetIterator(list *lst, int direction)
+{
+  assert(lst != NULL);
+
+  listIter *it = zmalloc(sizeof(listIter));
+  if (NULL == it)
+    return NULL;
+
+  if (AL_START_HEAD == direction) {
+    it->next = lst->head;
+  } else {
+    it->next = lst->tail;
+  }
+  it->direction = direction;
+
+  return it;
+}
+
+/*
+ * listIter *iter = listGetIterator(list,<direction>);
+ * listNode *node;
+ * while ((node = listNext(iter)) != NULL) {
+ *     doSomethingWith(listNodeValue(node));
+ * }
+ * listReleaseIterator(iter);
+ *
+ * T = O(1)
+ */
+listNode *listNext(listIter *it)
+{
+  assert(it != NULL);
+
+  listNode *cur = it->next;
+  if (cur != NULL) {
+    if (it->direction == AL_START_HEAD) {
+      it->next = cur->next;
+    } else {
+      it->next = cur->prev;
+    }
+  }
+
+  return cur;
+}
+
+void listReleaseIterator(listIter *it)
+{
+  zfree(it);
+}
+
+// T = O(n)
+listNode *listSearchKey(list *lst, void *key)
+{
+  assert(lst != NULL);
+
+  listIter *it = listGetIterator(lst, AL_START_HEAD);
+  listNode *node;
+  while ((node = listNext(it)) != NULL) {
+    if (lst->match) { // user match
+      if (lst->match(node->value, key)) {
+        listReleaseIterator(it);
+        return node;
+      }
+    } else {
+      if (node->value == key) {
+        listReleaseIterator(it);
+        return node;
+      }
+    }
+  }
+
+  listReleaseIterator(it);
+  return NULL;
+}
+
+// @index: 0-from head, to next. -1-from tail, to prev
+listNode *listIndex(list *lst, long index)
+{
+  assert(lst != NULL);
+
+  listNode *node;
+  if (index < 0) {
+    index = (-index)-1;
+    node = lst->tail;
+    while (node && index--)
+      node = node->prev;
+  } else {
+    node = lst->head;
+    while (node && index--)
+      node = node->next;
+  }
+
+  return node;
+}
+
+// T = O(1)
+void listDelNode(list *lst, listNode *node)
+{
+  assert(lst != NULL);
+  assert(node != NULL);
+
+  if (node->prev)
+    node->prev->next = node->next;
+  else
+    lst->head = node->next;
+
+  if (node->next)
+    node->next->prev = node->prev;
+  else
+    lst->tail = node->prev;
+
+  if (lst->free)
+    lst->free(node->value);
+
+  zfree(node);
+  lst->len--;
+}
+
+list *listDup(list *orig)
+{
+  if (NULL == orig)
+    return NULL;
+
+  list *copy = listCreate();
+  if (NULL == copy)
+    return NULL;
+  copy->dup = orig->dup;
+  copy->free = orig->free;
+  copy->match = orig->match;
+
+  listIter *it = listGetIterator(orig, AL_START_HEAD);
+  listNode *node;
+  void *value;
+  while ((node = listNext(it)) != NULL) {
+    if (orig->dup) {
+      value = orig->dup(node->value); // user dup
+      if (NULL == value) {
+        listReleaseIterator(it);
+        listRelease(copy);
+        return NULL;
+      }
+    } else {
+      value = node->value; // share same ptr
+    }
+
+    copy = listAddNodeTail(copy, value);
+    if (NULL == copy) {
+      listReleaseIterator(it);
+      listRelease(copy);
+      return NULL;
+    }
+  }
+
+  listReleaseIterator(it);
+  return copy;
+}
+
+void listRelease(list *lst)
+{
+  if (NULL == lst)
+    return;
+
+  unsigned long len = lst->len;
+  listNode *cur = lst->head;
+  listNode *next;
+  while (len--) {
+    next = cur->next; // save before free
+    if (lst->free)
+      lst->free(cur->value);
+    zfree(cur);
+    cur = next;
+  }
+  zfree(lst);
 }
