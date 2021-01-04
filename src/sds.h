@@ -40,7 +40,7 @@ sds sdscpy(sds s, const char *src);
 sds sdscpylen(sds s, const char *src, size_t len);
 int sdscmp(const sds s1, const sds s2);
 
-/* private */
+/* low level functions */
 sds sdsMakeRoomFor(sds ptr, size_t addlen);
 
 #endif // _XL_

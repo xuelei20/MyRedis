@@ -1,5 +1,6 @@
 set(xlredisSrc
   adlist.c
+  dict.c
   sds.c
   zmalloc
   )
