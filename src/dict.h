@@ -34,8 +34,50 @@ typedef struct dict {
   dictType *type;
   void *privdata;
   dictht ht[2];  // ht[0] for hashtable, ht[1] for rehash
-  int rehashidx; // rehashing not in progress if rehashidx == -1
+  int rehashidx; // if it's not rehashing, rehashidx == -1
   int iterators; // number of iterators currently running
 } dict;
+
+typedef struct dictIterator {
+  dict *d;
+  int table, index, safe;
+  dictEntry *entry, *nextEntry;
+  long long fingerprint;
+} dictIterator;
+
+#define DICT_OK 0
+#define DICT_ERR 1
+
+#define DICT_HT_INITIAL_SIZE     4
+
+#define dictSetKey(d, entry, _key_) \
+  do { \
+    if ((d)->type->keyDup) \
+      (entry)->key = (d)->type->valDup((d)->privdata, (_key_)); \
+    else \
+      (entry)->key = (_key_); \
+  } while(0)
+
+#define dictSetVal(d, entry, _val_) \
+  do { \
+    if ((d)->type->valDup) \
+      (entry)->v.val = (d)->type->valDup((d)->privdata, (_val_)); \
+    else \
+      (entry)->v.val = (_val_); \
+  } while(0)
+
+#define dictIsRehashing(d) ((d)->rehashidx != -1)
+#define dictHashKey(d, key) (d)->type->hashFunction((key))
+
+#define dictCompareKeys(d, key1, key2) \
+  (((d)->type->keyCompare) ? \
+    (d)->type->keyCompare((d)->privdata, (key1), (key2)) : \
+    (key1) == (key2))
+
+
+dict *dictCreate(dictType *type, void *privdata);
+int dictAdd(dict *d, void *key, void *value);
+dictEntry *dictAddRaw(dict *d, void *key);
+int dictExpand(dict *d, unsigned long size);
 
 #endif // _XL_
